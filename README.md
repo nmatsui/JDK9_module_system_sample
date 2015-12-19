@@ -4,11 +4,11 @@
 Sample programs of [Java Platform Module System (JSR 376)](http://openjdk.java.net/projects/jigsaw/spec/)
 
 ### case1 & case3
-case1 : The problem of CLASS visibility from the outside of package in Java 8.
+case1 : The problem of CLASS visibility from the outside of package in Java 8.  
 case3 : The solution by exporting  packages in Java 9.
 
 ### case2 & case4
-case2 : The problem of dependency tracking of JAR in java 8.
+case2 : The problem of dependency tracking of JAR in java 8.  
 case4 : The sosution by requiring packages in Java 9.
 
 ## Requirements
@@ -92,7 +92,13 @@ case3$ javac -d service/mods/ $(find service/src -name "*.java")
 case3$ jar cvf mlibs/service.jar -C service/mods/ .
 ```
 
-2 You can't compile `UnExpected.java` because `com.example.service.util.Util` is not exported.
+2 You can't compile `UnExpected.java` because only `com.example.service` is exported in `service/src/module-info.java`.
+
+```text
+module service {
+  exports com.example.service;
+}
+```
 
 ```text
 case3$ javac -d client/mods/ -mp mlibs client/src/module-info.java
@@ -123,6 +129,12 @@ client/src/net/example/client/UnExpected.java:7: error: cannot find symbol
 1 Create `commons.jar`
 
 ```text
+module commons {
+  exports com.example.commons.lib;
+}
+```
+
+```text
 case4$ javac -d commons/mods/ $(find commons/src -name "*.java")
 case4$ jar cvf mlib/commons.jar -C commons/mods/ .
 ```
@@ -130,12 +142,25 @@ case4$ jar cvf mlib/commons.jar -C commons/mods/ .
 2 Create `service.jar`
 
 ```text
+module service {
+  exports com.example.service;
+  requires commons;
+}
+```
+
+```text
 case4$ javac -d service/mods/ -mp mlib/ $(find service/src -name "*.java")
 checking commons/module-info
 case4$ jar cvf mlib/service.jar -C service/mods/ .
 ```
 
-3 If you delete `commons.jar`, you can't compile `client.jar` because javac goes back to ancestor JARs  and checks the existence of classes.
+3 If you delete `commons.jar`, you can't compile `client.jar` because javac goes back to ancestor JARs  and checks the existence of modules.
+
+```text
+module client {
+  requires service;
+}
+```
 
 ```text
 case4$ rm mlib/commons.jar
